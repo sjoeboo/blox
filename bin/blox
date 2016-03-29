@@ -1,0 +1,144 @@
+#!/usr/bin/env ruby
+require 'infoblox'
+require 'pp'
+require 'yaml'
+require 'ipaddr'
+require 'optparse'
+require 'blox'
+
+ENV['WAPI_VERSION']='2.0'
+options = Hash.new
+
+OptionParser.new do |opts|
+  opts.banner = "Usage infoblox <Facility (dns|dhcp)> <action>(add|update|delete) [options]"
+  opts.on("-c", "--config /path/to/infoblox.yaml",String, "use custom config path (~/.infoblox.yaml, /etc/infoblox.yaml)") do |config |
+    options.merge!(Hash[YAML::load(open(config)).map { |k, v| [k.to_sym, v] }])
+    options[:config] = config
+  end
+  opts.on("-f", "--fqdn FQDN",String, "FQDN or add/update/remove") do |fqdn|
+    options[:fqdn] = fqdn
+  end
+  opts.on("-h", "--new-fqdn FQDN",String, "New FQDN if updating a record") do |new_fqdn|
+    options[:new_fqdn] = new_fqdn
+  end
+  opts.on("-n", "--network 192.168.0.0/24",String, "CIDR of network to use") do |network|
+    options[:network] = network
+  end
+  opts.on("-i", "--ip 192.168.1.1",String,"IP address to use (if adding a record, this can be ommtted for next avialable, must specify network however)") do |ip|
+    options[:ip] = ip
+  end
+  opts.on("-j", "--new-ip 192.168.1.2",String,"New ip address if updating a record") do |new_ip|
+    options[:new_ip] = new_ip
+  end
+  opts.on("-m", "--mac 00:05:67:45:32:01",String,"Mac Address to use") do |mac|
+    options[:mac] = mac
+  end
+  opts.on("-p", "--new-mac 00:05:67:45:32:02",String,"New Mac Address to use") do |new_mac|
+    options[:new_mac] = new_mac
+  end
+
+  opts.on("-v","--verbose", "Be verbose") do |v|
+    options[:verbose] = v
+  end
+  opts.parse!
+end
+
+options[:facility] = ARGV[0]
+if !options[:facility].match(/(dns|dhcp|both)/)
+  raise "Facility must be one of 'dns', 'dhcp' or 'both'!"
+end
+
+options[:action] = ARGV[1]
+if !options[:action].match(/(add|update|delete)/)
+  raise "Action must be one of 'add', 'update' or 'delete'"
+end
+
+
+#load config
+if options[:config] == nil
+  config=Blox.config_find()
+  options[:config] = config
+  options.merge!(Hash[YAML::load(open(File.expand_path(config))).map { |k, v| [k.to_sym, v] }])
+  if options[:verbose]
+    pp options
+  end
+else
+  options.merge!(Hash[YAML::load(open(File.expand_path(options[:config]))).map { |k, v| [k.to_sym, v] }])
+  if options[:verbose]
+    pp options
+  end
+end
+
+#dns and dhc have different requirements for options and functions.
+
+case options[:facility]
+when "dns"
+  if options[:ip] == nil or options[:fqdn] == nil
+    raise "Both IP and FQDN are required for DNS actions"
+  end
+  connection=Blox.connect(options[:username],options[:password],options[:host])
+  if Blox.ipv4check(options[:ip])
+    case options[:action]
+    when "add"
+      #Be smarter here, see if we exist, and if so don't #FAIL, just say so.
+      if !Blox.dns_exists(options[:fqdn],options[:ip],options[:verbose],connection)
+        if options[:verbose] ==true
+          puts "record doesn't exist, adding"
+        end
+        Blox.dns_add(options[:fqdn],options[:ip],options[:verbose],connection)
+      else
+        if options[:verbose] ==true
+          puts "record exists! not adding"
+        end
+      end
+    when "update"
+      #check we got the new values.
+      if ((options[:new_ip] != nil) or (options[:new_fqdn] != nil))
+        Blox.dns_update(options[:fqdn],options[:ip],options[:new_fqdn],options[:new_ip],options[:verbose],connection)
+      else
+        raise "No new IP or FQDN provided for update action"
+      end
+    when "delete"
+      Blox.dns_delete(options[:fqdn],options[:ip],options[:verbose],connection)
+    end
+  end
+
+when "dhcp"
+  if (options[:ip] == nil and options[:network] == nil) or options[:fqdn] == nil or options[:mac] ==nil
+    raise "IP or Network, and FQDN and MAC are required for DNS actions"
+  end
+  connection=Blox.connect(options[:username],options[:password],options[:host])
+  if options[:verbose] ==true
+    puts "Connected to Infoblox"
+  end
+    case options[:action]
+    when "add"
+      #if we have an ip, check for existing reservation
+      # if not check get next avail
+      if (options[:ip] == nil and options[:network] != nil)
+        #get net avail ip
+        options[:ip]=Blox.dhcp_next(options[:network],options[:verbose],connection)
+      end
+      if Blox.ipv4check(options[:ip])
+        if !Blox.dhcp_exists(options[:mac],options[:verbose],connection)
+          if options[:verbose] ==true
+            puts "record doesn't exist, adding"
+          end
+          Blox.dhcp_add(options[:fqdn],options[:ip],options[:mac],options[:verbose],connection)
+        else
+          if options[:verbose] ==true
+            puts "record exists! not adding"
+          end
+        end
+      end
+    when "update"
+      if ((options[:new_ip] != nil) or (options[:new_fqdn] != nil) or (options[:new_mac] != nil ))
+        Blox.dhcp_update(options[:fqdn],options[:ip],options[:mac],options[:new_fqdn],options[:new_ip],options[:new_mac],options[:verbose],connection)
+      else
+        raise "No new IP, MAC, od FQDN provided for update action"
+      end
+    when "delete"
+      Blox.dhcp_delete(options[:fqdn],options[:ip],options[:mac],options[:verbose],connection)
+    end
+    #when "both"
+  end
