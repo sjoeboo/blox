@@ -4,9 +4,8 @@ require 'pp'
 require 'yaml'
 require 'ipaddr'
 require 'optparse'
-require 'blox'
+require 'iblox'
 
-ENV['WAPI_VERSION']='2.0'
 options = Hash.new
 
 OptionParser.new do |opts|
@@ -69,14 +68,14 @@ else
   end
 end
 
-#dns and dhc have different requirements for options and functions.
+#dns and dhcp have different requirements for options and functions.
 
 case options[:facility]
 when "dns"
   if options[:ip] == nil or options[:fqdn] == nil
     raise "Both IP and FQDN are required for DNS actions"
   end
-  connection=Iblox.connect(options[:username],options[:password],options[:host])
+  connection=Iblox.connect(options[:username],options[:password],options[:host],options[:wapi_version])
   if Iblox.ipv4check(options[:ip])
     case options[:action]
     when "add"

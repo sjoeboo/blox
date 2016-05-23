@@ -1,5 +1,4 @@
 source 'http://rubygems.org'
 
 gem 'json'
-gem 'infoblox'
-
+gem 'infoblox', '>= 0.4.1'

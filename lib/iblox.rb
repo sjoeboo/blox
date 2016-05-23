@@ -14,7 +14,8 @@ def self.config_find()
 end
 
 #Open infoblox connection object
-def self.connect (username, password, host)
+def self.connect (username, password, host, wapi_version)
+  ::Infoblox.wapi_version = "#{wapi_version}"
   connection = Infoblox::Connection.new(username: "#{username}",password: "#{password}", host: "#{host}")
   return connection
 end
@@ -108,13 +109,17 @@ def self.dhcp_exists(mac,verbose,connection)
     return true
   end
 end
-def self.dhcp_next(network,verbose,connection)
+def self.dhcp_next(network,verbose,connection,range)
   if verbose == true
     puts "Getting next available IP address for network #{network}"
   end
-  #net = Infoblox::Network.find(connection, network: network).first
-  range = Infoblox::Range.find(connection, network: network).first
-  ip = range.next_available_ip[0]
+  if range == true
+    range = Infoblox::Range.find(connection, network: network).first
+    ip = range.next_available_ip[0]
+  else
+    net = Infoblox::Network.find(connection, network: network).first
+    ip = net.next_available_ip[0]
+  end
   return ip
 end
 def self.dhcp_add(fqdn,ip,mac,verbose,connection)
