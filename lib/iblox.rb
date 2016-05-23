@@ -2,7 +2,7 @@ class Iblox
 
 #config find
 def self.config_find()
-  config_search_paths=['~/.blox.yaml','/etc/blox.yaml']
+  config_search_paths=['~/.iblox.yaml','/etc/iblox.yaml']
   config_search_paths.each do |path|
   #If #{path} is a file and re can read it, return it.
     if File.exists?(File.expand_path(path))
