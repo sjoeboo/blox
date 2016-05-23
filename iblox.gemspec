@@ -1,5 +1,5 @@
 Gem::Specification.new do |s|
-  s.name        = '1blox'
+  s.name        = 'iblox'
   s.version     = '0.0.1'
   s.date        = '2012-05-23'
   s.summary     = "iBlox: Infoblox cli wrapper"
@@ -12,5 +12,5 @@ Gem::Specification.new do |s|
     'http://rubygems.org/gems/iblox'
   s.license       = 'GPL'
   s.add_development_dependency "bundler", "~> 1.10"
-  s.add_runtime_dependency "infoblox"
+  s.add_runtime_dependency "infoblox", "~> 1.0"
 end
