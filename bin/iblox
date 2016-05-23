@@ -9,7 +9,7 @@ require 'iblox'
 options = Hash.new
 
 OptionParser.new do |opts|
-  opts.banner = "Usage infoblox <Facility (dns|dhcp)> <action>(add|update|delete) [options]"
+  opts.banner = "Usage iblox <Facility (dns|dhcp)> <action>(add|update|delete) [options]"
   opts.on("-c", "--config /path/to/infoblox.yaml",String, "use custom config path (~/.infoblox.yaml, /etc/infoblox.yaml)") do |config |
     options.merge!(Hash[YAML::load(open(config)).map { |k, v| [k.to_sym, v] }])
     options[:config] = config
@@ -34,6 +34,12 @@ OptionParser.new do |opts|
   end
   opts.on("-p", "--new-mac 00:05:67:45:32:02",String,"New Mac Address to use") do |new_mac|
     options[:new_mac] = new_mac
+  end
+  opts.on("-a", "--api 2.0",String,"WAPI Version") do |api|
+    options[:wapi_version] = api
+  end
+  opts.on("-r", "--range","Use a DHCP range when finding addresses") do |range|
+    options[:range] = range
   end
 
   opts.on("-v","--verbose", "Be verbose") do |v|
