@@ -1,4 +1,4 @@
-class Blox
+class Iblox
 
 #config find
 def self.config_find()
