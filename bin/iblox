@@ -104,7 +104,6 @@ when "dns"
     single_item[:ip] = options[:ip]
     batch_data.push(single_item)
   end
-  pp batch_data
   #connect once
   connection=Iblox.connect(options[:username],options[:password],options[:host],options[:wapi_version])
   batch_data.each do |item|
