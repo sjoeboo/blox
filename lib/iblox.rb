@@ -20,6 +20,38 @@ def self.connect (username, password, host, wapi_version)
   return connection
 end
 
+def self.batch_dns_load(batch_file)
+  #First, see if we're using .csv, .yaml/.yml, or .json
+  ext=batch_file.split('.')[-1]
+  if ext.match(/(csv|yaml|yml|json)/)
+    #make sure it exists
+    if (File.exist? File.expand_path batch_file)
+      batch_data=[]
+      case ext
+      when "csv"
+        batch_data=[]
+        f=File.open(batch_file)
+        f.each_line do|line|
+          entry = {}
+          entry[:fqdn] = line.split(',')[0].chomp
+          entry[:ip] = line.split(',')[1].chomp
+          batch_data.push(entry)
+        end
+      when "yaml","yml"
+        batch_data=YAML::load(File.open(batch_file))
+      when "json"
+        batch_data=JSON.parse(File.read(batch_file),{:symbolize_names => true})
+      else
+        raise ("Batch filetype #{ext} not supported")
+      end
+      return batch_data
+    else
+      raise "Batch file does not exist"
+    end
+  else
+    raise ("Batch filetype #{ext} not supported")
+  end
+end
 #Check we got an IPv4 address
 def self.ipv4check (ip)
   ipaddr1 = IPAddr.new "#{ip}"
