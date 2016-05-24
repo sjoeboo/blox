@@ -146,3 +146,6 @@ And finally, **json**
 ```
 
 Again, optionally replacing the ip with "network" and a CIDR
+
+**BOTH**
+For `both` operations, all the **dhcp** fileformats are vaild/required, since we need all that same info
