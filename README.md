@@ -50,16 +50,23 @@ Usage iblox <Facility (dns|dhcp)> <action>(add|update|delete) [options]
 
 iblox `facility` `action` `options/switches`
 
-Where `facility` is `dns` or `dhcp` (some day I'll add a "both"), and `action` is `add`, `delete` or `update`
+Where `facility` is `dns`, `dhcp` or `both` (which, you guessed it, does both operations)
 
-DNS operations require paassing in an IP and FQDN.
-DHCP operations require passing in an IP(or network CIDR, we'll select the next available IP), FDQN(well, a name), and MAC address
+`dns` operations require passing in an IP and FQDN.
+`dhcp` operations require passing in an IP(or network CIDR, we'll select the next available IP), FDQN(well, a name), and MAC address
+`both` operations require passing in an IP(or network CIDR, we'll select the next available IP), FDQN(well, a name), and MAC address
 
 Examples:
 
 ```
 iblox dns delete -f bloxtest.some.domain.com -i 192.168.200.200
 ```
+Would delete the dns entry with BOTH matching IP and name, A record and PTR.
+
+```
+iblox both add -f bloxtest.some.domain.com -i 192.168.200.200 -m 00:01:02:03:04:05
+```
+Would add a static dhcp reservation for this host, as well as make an A record and PTR record for it.
 
 
 Batch Mode

@@ -102,8 +102,6 @@ when "dns"
   #connect once
   connection=Iblox.connect(options[:username],options[:password],options[:host],options[:wapi_version])
   batch_data.each do |item|
-    pp item
-    pp item[:ip]
     if Iblox.ipv4check(item[:ip])
       case options[:action]
       when "add"
@@ -137,27 +135,42 @@ when "dns"
   end
 
 when "dhcp"
-  if (options[:ip] == nil and options[:network] == nil) or options[:fqdn] == nil or options[:mac] ==nil
-    raise "IP or Network, and FQDN and MAC are required for DNS actions"
+  #are we doing batch mode?
+  if options[:batch] != nil
+    batch_data=Iblox.batch_dhcp_load(options[:batch])
+  else
+    if (options[:ip] == nil and options[:network] == nil) or options[:fqdn] == nil or options[:mac] ==nil
+      raise "IP or Network, and FQDN and MAC are required for DHCP actions"
+    end
+    #lets load batch_data with our one item so we can just "loop" that in either case
+    batch_data=[]
+    single_item={}
+    single_item[:fqdn] = options[:fqdn]
+    single_item[:ip] = options[:ip]
+    single_item[:mac] = options[:mac]
+    single_item[:network] = options[:network]
+    batch_data.push(single_item)
   end
-  connection=Iblox.connect(options[:username],options[:password],options[:host])
+  #connect once
+  connection=Iblox.connect(options[:username],options[:password],options[:host],options[:wapi_version])
   if options[:verbose] ==true
     puts "Connected to Infoblox"
   end
+  batch_data.each do |item|
     case options[:action]
     when "add"
       #if we have an ip, check for existing reservation
       # if not check get next avail
-      if (options[:ip] == nil and options[:network] != nil)
+      if (item[:ip] == nil and item[:network] != nil)
         #get net avail ip
-        options[:ip]=Iblox.dhcp_next(options[:network],options[:verbose],connection)
+        item[:ip]=Iblox.dhcp_next(item[:network],options[:verbose],connection,options[:range])
       end
-      if Iblox.ipv4check(options[:ip])
-        if !Iblox.dhcp_exists(options[:mac],options[:verbose],connection)
+      if Iblox.ipv4check(item[:ip])
+        if !Iblox.dhcp_exists(item[:mac],options[:verbose],connection)
           if options[:verbose] ==true
             puts "record doesn't exist, adding"
           end
-          Iblox.dhcp_add(options[:fqdn],options[:ip],options[:mac],options[:verbose],connection)
+          Iblox.dhcp_add(item[:fqdn],item[:ip],item[:mac],options[:verbose],connection)
         else
           if options[:verbose] ==true
             puts "record exists! not adding"
@@ -165,13 +178,79 @@ when "dhcp"
         end
       end
     when "update"
-      if ((options[:new_ip] != nil) or (options[:new_fqdn] != nil) or (options[:new_mac] != nil ))
-        Iblox.dhcp_update(options[:fqdn],options[:ip],options[:mac],options[:new_fqdn],options[:new_ip],options[:new_mac],options[:verbose],connection)
+      if options[:batch] != nil
+        raise "Update in Batch mode not supported yet"
       else
-        raise "No new IP, MAC, od FQDN provided for update action"
+        if ((options[:new_ip] != nil) or (options[:new_fqdn] != nil) or (options[:new_mac] != nil ))
+          Iblox.dhcp_update(options[:fqdn],options[:ip],options[:mac],options[:new_fqdn],options[:new_ip],options[:new_mac],options[:verbose],connection)
+        else
+          raise "No new IP, MAC, od FQDN provided for update action"
+        end
       end
     when "delete"
-      Iblox.dhcp_delete(options[:fqdn],options[:ip],options[:mac],options[:verbose],connection)
+      Iblox.dhcp_delete(item[:fqdn],item[:ip],item[:mac],options[:verbose],connection)
     end
-    #when "both"
   end
+when "both"
+  #do both operations
+  #are we doing batch mode?
+  if options[:batch] != nil
+    #We can use the dhcp loader here since it loads all the info we need
+    batch_data=Iblox.batch_dhcp_load(options[:batch])
+  else
+    if (options[:ip] == nil and options[:network] == nil) or options[:fqdn] == nil or options[:mac] ==nil
+      raise "IP or Network, and FQDN and MAC are required for DHCP+DNS actions"
+    end
+    #lets load batch_data with our one item so we can just "loop" that in either case
+    batch_data=[]
+    single_item={}
+    single_item[:fqdn] = options[:fqdn]
+    single_item[:ip] = options[:ip]
+    single_item[:mac] = options[:mac]
+    single_item[:network] = options[:network]
+    batch_data.push(single_item)
+  end
+  #connect once
+  connection=Iblox.connect(options[:username],options[:password],options[:host],options[:wapi_version])
+  if options[:verbose] ==true
+    puts "Connected to Infoblox"
+  end
+  batch_data.each do |item|
+    case options[:action]
+    when "add"
+      #if we have an ip, check for existing reservation
+      # if not check get next avail
+      if (item[:ip] == nil and item[:network] != nil)
+        #get net avail ip
+        item[:ip]=Iblox.dhcp_next(item[:network],options[:verbose],connection,options[:range])
+      end
+      if Iblox.ipv4check(item[:ip])
+        if !Iblox.dhcp_exists(item[:mac],options[:verbose],connection)
+          if options[:verbose] ==true
+            puts "record doesn't exist, adding"
+          end
+          Iblox.dhcp_add(item[:fqdn],item[:ip],item[:mac],options[:verbose],connection)
+          if !Iblox.dns_exists(item[:fqdn],item[:ip],options[:verbose],connection)
+            if options[:verbose] ==true
+              puts "record doesn't exist, adding"
+            end
+            Iblox.dns_add(item[:fqdn],item[:ip],options[:verbose],connection)
+          else
+            if options[:verbose] ==true
+              puts "DNS record exists! not adding"
+            end
+          end
+        else
+          if options[:verbose] ==true
+            puts "DHCP record exists! not adding"
+          end
+        end
+      end
+    when "update"
+      raise "update not supported for BOTH mode right now"
+    when "delete"
+      Iblox.dhcp_delete(item[:fqdn],item[:ip],item[:mac],options[:verbose],connection)
+      Iblox.dns_delete(item[:fqdn],item[:ip],options[:verbose],connection)
+    end
+  end
+end
