@@ -54,6 +54,7 @@ OptionParser.new do |opts|
   opts.parse!
 end
 
+
 options[:facility] = ARGV[0]
 if options[:facility] == nil
   raise "Must pass facility (dns/dhcp/both)"
@@ -63,9 +64,10 @@ if !options[:facility].match(/(dns|dhcp|both)/)
 end
 
 options[:action] = ARGV[1]
-if options[:action] = nil
+if options[:action] == nil
   raise "Must pass an action!"
 end
+
 if !options[:action].match(/(add|update|delete)/)
   raise "Action must be one of 'add', 'update' or 'delete'"
 end

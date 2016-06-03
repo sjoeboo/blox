@@ -67,10 +67,10 @@ def self.batch_dhcp_load(batch_file)
           entry[:fqdn] = line.split(',')[0].chomp
           #figure out if this entry is an ip or CIDR
           if line.split(',')[1].chomp.match('/')
-            puts "CIDR"
+            #puts "CIDR"
             entry[:network] = line.split(',')[1].chomp
           else
-            puts "IP"
+            #puts "IP"
             entry[:ip] = line.split(',')[1].chomp
           end
           entry[:mac] = line.split(',')[2].chomp
