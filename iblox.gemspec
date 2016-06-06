@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'iblox'
-  s.version     = '0.0.2'
+  s.version     = '0.0.3'
   s.date        = '2012-05-23'
   s.summary     = "iBlox: Infoblox cli wrapper"
   s.description = "A simple Infoblox CLI wrapper"
