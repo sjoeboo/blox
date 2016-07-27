@@ -11,7 +11,7 @@ options = Hash.new
 
 OptionParser.new do |opts|
   opts.banner = "Usage iblox <Facility (dns|dhcp)> <action>(add|update|delete) [options]"
-  opts.on("-c", "--config /path/to/infoblox.yaml",String, "use custom config path (~/.infoblox.yaml, /etc/infoblox.yaml)") do |config |
+  opts.on("-c", "--config /path/to/infoblox.yaml",String, "use custom config path (defaults: ~/.iblox.yaml, /etc/iblox.yaml)") do |config |
     options.merge!(Hash[YAML::load(open(config)).map { |k, v| [k.to_sym, v] }])
     options[:config] = config
   end
