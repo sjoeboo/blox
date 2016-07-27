@@ -32,7 +32,7 @@ see `--help`, but, generally:
 
 ```
 Usage iblox <Facility (dns|dhcp)> <action>(add|update|delete) [options]
-    -c /path/to/infoblox.yaml,       use custom config path (~/.infoblox.yaml, /etc/infoblox.yaml)
+    -c /path/to/infoblox.yaml,       use custom config path (defaults: ~/.iblox.yaml, /etc/iblox.yaml)
         --config
     -f, --fqdn FQDN                  FQDN or add/update/remove
     -h, --new-fqdn FQDN              New FQDN if updating a record
